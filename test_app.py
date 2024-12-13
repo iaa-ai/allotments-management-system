@@ -714,7 +714,6 @@ def test_delete_rental(mock_get_db_connection):
     assert response.status_code == 200
     assert b'Rental deleted successfully' in response.data
 
-
 # Test for DELETE /rentals/<id> (Rental not found)
 @patch('app.get_db_connection')
 def test_delete_rental_not_found(mock_get_db_connection):
@@ -730,7 +729,6 @@ def test_delete_rental_not_found(mock_get_db_connection):
     assert response.status_code == 404
     assert b'Rental not found' in response.data
 
-
 # Test for DELETE /rentals/<id> (Database error)
 @patch('app.get_db_connection')
 def test_delete_rental_db_error(mock_get_db_connection):
@@ -740,6 +738,172 @@ def test_delete_rental_db_error(mock_get_db_connection):
 
     with app.test_client() as client:
         response = client.delete('/rentals/1')
+
+    assert response.status_code == 500
+    assert b'Database error' in response.data
+
+# Test for GET /allotments (Fetch all allotments)
+@patch('app.get_db_connection')
+def test_get_allotments(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [{'Allotment_ID': 1, 'Site_ID': 1, 'Allotment_Location': 'North Side', 'Size': 100, 'Annual_Rental': 1200}]
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/allotments')
+
+    assert response.status_code == 200
+    assert b'North Side' in response.data
+    assert b'1200' in response.data
+
+# Test for GET /allotments/<id> (Fetch a specific allotment by ID)
+@patch('app.get_db_connection')
+def test_get_allotment(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = {'Allotment_ID': 1, 'Site_ID': 1, 'Allotment_Location': 'North Side', 'Size': 100, 'Annual_Rental': 1200}
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/allotments/1')
+
+    assert response.status_code == 200
+    assert b'North Side' in response.data
+    assert b'1200' in response.data
+
+
+# Test for GET /allotments/<id> (Allotment not found)
+@patch('app.get_db_connection')
+def test_get_allotment_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/allotments/999')  
+
+    assert response.status_code == 404
+    assert b'Allotment not found' in response.data
+
+
+# Test for POST /allotments (Add a new allotment)
+@patch('app.get_db_connection')
+def test_add_allotment(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Site_ID': 1,
+        'Allotment_Location': 'East Side',
+        'Size': 150,
+        'Annual_Rental': 1500
+    }
+
+    with app.test_client() as client:
+        response = client.post('/allotments', json=data)
+
+    assert response.status_code == 201
+    assert b'Allotment added successfully' in response.data
+
+# Test for POST /allotments (Missing required fields)
+def test_add_allotment_missing_fields():
+    data = {'Site_ID': 1, 'Allotment_Location': 'East Side'}
+    with app.test_client() as client:
+        response = client.post('/allotments', json=data)
+
+    assert response.status_code == 400
+    assert b'Missing required fields' in response.data
+
+# Test for PUT /allotments/<id> (Update allotment - success case)
+@patch('app.get_db_connection')
+def test_update_allotment(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Site_ID': 1,
+        'Allotment_Location': 'South Side',
+        'Size': 120,
+        'Annual_Rental': 1300
+    }
+
+    with app.test_client() as client:
+        response = client.put('/allotments/1', json=data)
+
+    assert response.status_code == 200
+    assert b'Allotment updated successfully' in response.data
+
+# Test for PUT /allotments/<id> (Allotment not found)
+@patch('app.get_db_connection')
+def test_update_allotment_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Site_ID': 1,
+        'Allotment_Location': 'South Side',
+        'Size': 120,
+        'Annual_Rental': 1300
+    }
+
+    with app.test_client() as client:
+        response = client.put('/allotments/999', json=data)
+
+    assert response.status_code == 404
+    assert b'Allotment not found' in response.data
+
+# Test for DELETE /allotments/<id> (Delete allotment - success case)
+@patch('app.get_db_connection')
+def test_delete_allotment(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    mock_cursor.fetchone.return_value = {'Allotment_ID': 1, 'Site_ID': 1, 'Allotment_Location': 'East Side', 'Size': 150, 'Annual_Rental': 1500}
+
+    with app.test_client() as client:
+        response = client.delete('/allotments/1')
+
+    assert response.status_code == 200
+    assert b'Allotment deleted successfully' in response.data
+
+# Test for DELETE /allotments/<id> (Allotment not found)
+@patch('app.get_db_connection')
+def test_delete_allotment_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.delete('/allotments/999')  
+
+    assert response.status_code == 404
+    assert b'Allotment not found' in response.data
+
+# Test for DELETE /allotments/<id> (Database error)
+@patch('app.get_db_connection')
+def test_delete_allotment_db_error(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_conn.cursor.side_effect = Exception("Database error")
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.delete('/allotments/1')
 
     assert response.status_code == 500
     assert b'Database error' in response.data
