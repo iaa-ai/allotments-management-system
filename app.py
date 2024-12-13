@@ -1,4 +1,4 @@
-from flask import Flask 
+from flask import Flask, jsonify, request
 import pymysql 
 
 app = Flask(__name__)
@@ -82,6 +82,26 @@ def home():
     </body>
     </html>
     """
+
+# Departments
+@app.route('/departments', methods=['GET'])  
+def get_departments():
+    connection = None  
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Departments")  
+            departments = cursor.fetchall()
+        return jsonify(departments), 200
+
+    except Exception as e:
+        return jsonify({'Database connection error': str(e)}), 500
+
+    finally:
+        if connection:
+            connection.close()
+
 
 
 if __name__ == '__main__':
