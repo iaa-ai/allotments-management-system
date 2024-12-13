@@ -83,7 +83,8 @@ def home():
     </html>
     """
 
-# Departments
+# ----------------------------------------------- Departments ------------------------------------------------
+# Route to fetch all Departments
 @app.route('/departments', methods=['GET'])  
 def get_departments():
     connection = None  
@@ -204,6 +205,120 @@ def delete_department(id):
     finally:
         connection.close()
 
+# -------------------------------------------------- Sites ---------------------------------------------------
+# Route to fetch all sites
+@app.route('/sites', methods=['GET'])
+def get_sites():
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Sites")
+            sites = cursor.fetchall() 
+        return jsonify(sites), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to fetch a specific site by its ID
+@app.route('/sites/<int:id>', methods=['GET'])
+def get_site(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Sites WHERE Site_ID = %s", (id,))
+            site = cursor.fetchone()  
+
+        if site:
+            return jsonify(site), 200
+        
+        else:
+            return jsonify({'error': 'Site not found'}), 404
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to add a new site
+@app.route('/sites', methods=['POST'])
+def add_site():
+    data = request.json  
+    required_fields = ['Department_ID', 'Managers_Name', 'Mobile_Cell_Phone_Number']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        connection = get_db_connection()
+        
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO Sites (Department_ID, Managers_Name, Mobile_Cell_Phone_Number) VALUES (%s, %s, %s)",
+                (data['Department_ID'], data['Managers_Name'], data['Mobile_Cell_Phone_Number'])
+            )
+            connection.commit()  
+        
+        return jsonify({'message': 'Site added successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to update an existing site by its ID
+@app.route('/sites/<int:id>', methods=['PUT'])
+def update_site(id):
+    data = request.json  
+
+    try:
+        connection = get_db_connection()
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Sites WHERE Site_ID = %s", (id,))
+            site = cursor.fetchone()
+            
+            if not site:
+                return jsonify({'error': 'Site not found'}), 404
+            
+            cursor.execute(
+                "UPDATE Sites SET Department_ID=%s, Managers_Name=%s, Mobile_Cell_Phone_Number=%s WHERE Site_ID=%s",
+                (data['Department_ID'], data['Managers_Name'], data['Mobile_Cell_Phone_Number'], id)
+            )
+            connection.commit()  
+        return jsonify({'message': 'Site updated successfully'}), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to delete a site by its ID
+@app.route('/sites/<int:id>', methods=['DELETE'])
+def delete_site(id):
+    try:
+        connection = get_db_connection()
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Sites WHERE Site_ID = %s", (id,))
+            site = cursor.fetchone()
+
+            if not site:
+                return jsonify({'error': 'Site not found'}), 404
+            
+            cursor.execute("DELETE FROM Sites WHERE Site_ID = %s", (id,))
+            connection.commit()
+        return jsonify({'message': 'Site deleted successfully'}), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
 
 
 
