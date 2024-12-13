@@ -51,3 +51,22 @@ def test_get_departments(mock_get_db_connection, test_token):
     assert response.status_code == 200  
     assert b'John' in response.data 
     assert b'john@example.com' in response.data  
+
+# Test for GET /departments/<id> to fetch a specific department by ID
+@patch('app.get_db_connection')  
+def test_get_department(mock_get_db_connection):
+    mock_conn = MagicMock()  
+    mock_cursor = MagicMock()  
+
+    mock_cursor.fetchone.return_value = {'Department_ID': 1, 'Managers_Name': 'John',
+                                         'Email_Address': 'john@example.com', 'Mobile_Cell_Phone_Number': '1234567890'}
+
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/departments/1', headers={'Authorization': f'Bearer {test_token}'})
+
+    assert response.status_code == 200
+    assert b'John' in response.data 
+    assert b'john@example.com' in response.data  
