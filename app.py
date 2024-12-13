@@ -502,6 +502,97 @@ def delete_rental(id):
     finally:
         connection.close()
 
+# ------------------------------------------------- Allotments -------------------------------------------------------
+@app.route('/allotments', methods=['GET'])
+def get_allotments():
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Allotments")
+            allotments = cursor.fetchall()
+        return jsonify(allotments), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/allotments/<int:id>', methods=['GET'])
+def get_allotment(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Allotments WHERE Allotment_ID = %s", (id,))
+            allotment = cursor.fetchone()
+        if allotment:
+            return jsonify(allotment), 200
+        else:
+            return jsonify({'error': 'Allotment not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/allotments', methods=['POST'])
+def add_allotment():
+    data = request.json
+    required_fields = ['Site_ID', 'Allotment_Location', 'Size', 'Annual_Rental']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO Allotments (Site_ID, Allotment_Location, Size, Annual_Rental) VALUES (%s, %s, %s, %s)",
+                (data['Site_ID'], data['Allotment_Location'], data['Size'], data['Annual_Rental'])
+            )
+            connection.commit()
+        return jsonify({'message': 'Allotment added successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/allotments/<int:id>', methods=['PUT'])
+def update_allotment(id):
+    data = request.json
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Allotments WHERE Allotment_ID = %s", (id,))
+            allotment = cursor.fetchone()
+            if not allotment:
+                return jsonify({'error': 'Allotment not found'}), 404
+            cursor.execute(
+                "UPDATE Allotments SET Site_ID=%s, Allotment_Location=%s, Size=%s, Annual_Rental=%s WHERE Allotment_ID=%s",
+                (data['Site_ID'], data['Allotment_Location'], data['Size'], data['Annual_Rental'], id)
+            )
+            connection.commit()
+        return jsonify({'message': 'Allotment updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/allotments/<int:id>', methods=['DELETE'])
+def delete_allotment(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Allotments WHERE Allotment_ID = %s", (id,))
+            allotment = cursor.fetchone()
+            if not allotment:
+                return jsonify({'error': 'Allotment not found'}), 404
+            cursor.execute("DELETE FROM Allotments WHERE Allotment_ID = %s", (id,))
+            connection.commit()
+        return jsonify({'message': 'Allotment deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True)
