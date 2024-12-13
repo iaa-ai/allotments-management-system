@@ -107,3 +107,14 @@ def test_add_department(mock_get_db_connection, test_token):
 
     assert response.status_code == 201  
     assert b'Department added successfully' in response.data 
+
+# Test for POST /departments when required fields are missing
+def test_add_department_missing_fields(test_token):
+    data = {'Managers_Name': 'Jane Doe'}  # Prepare incomplete data for department
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'} 
+        response = client.post('/departments', json=data, headers=headers) 
+
+    assert response.status_code == 400  
+    assert b'Missing required fields' in response.data  
