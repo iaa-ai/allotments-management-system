@@ -578,3 +578,168 @@ def test_delete_resident_db_error(mock_get_db_connection):
 
     assert response.status_code == 500
     assert b'Database error' in response.data
+
+# Test for GET /rentals (Fetch all rentals)
+@patch('app.get_db_connection')
+def test_get_rentals(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = [{'Rental_ID': 1, 'Allotment_ID': 1, 'Resident_ID': 1, 'Date_Rented_From': '2022-01-01', 'Date_Rented_To': '2023-01-01'}]
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/rentals')
+
+    assert response.status_code == 200
+    assert b'2022-01-01' in response.data
+    assert b'2023-01-01' in response.data
+
+# Test for GET /rentals/<id> (Fetch a specific rental by ID)
+@patch('app.get_db_connection')
+def test_get_rental(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = {'Rental_ID': 1, 'Allotment_ID': 1, 'Resident_ID': 1, 'Date_Rented_From': '2022-01-01', 'Date_Rented_To': '2023-01-01'}
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/rentals/1')
+
+    assert response.status_code == 200
+    assert b'2022-01-01' in response.data
+    assert b'2023-01-01' in response.data
+
+# Test for GET /rentals/<id> (Rental not found)
+@patch('app.get_db_connection')
+def test_get_rental_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/rentals/999')  
+
+    assert response.status_code == 404
+    assert b'Rental not found' in response.data
+
+# Test for POST /rentals (Add a new rental)
+@patch('app.get_db_connection')
+def test_add_rental(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Allotment_ID': 1,
+        'Resident_ID': 1,
+        'Date_Rented_From': '2022-01-01',
+        'Date_Rented_To': '2023-01-01'
+    }
+
+    with app.test_client() as client:
+        response = client.post('/rentals', json=data)
+
+    assert response.status_code == 201
+    assert b'Rental added successfully' in response.data
+
+# Test for POST /rentals (Missing required fields)
+def test_add_rental_missing_fields():
+    data = {'Allotment_ID': 1, 'Resident_ID': 1}
+    with app.test_client() as client:
+        response = client.post('/rentals', json=data)
+
+    assert response.status_code == 400
+    assert b'Missing required fields' in response.data
+
+# Test for PUT /rentals/<id> (Update rental - success case)
+@patch('app.get_db_connection')
+def test_update_rental(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Allotment_ID': 1,
+        'Resident_ID': 1,
+        'Date_Rented_From': '2022-01-01',
+        'Date_Rented_To': '2023-01-01'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/rentals/1', json=data)
+
+    assert response.status_code == 200
+    assert b'Rental updated successfully' in response.data
+
+# Test for PUT /rentals/<id> (Rental not found)
+@patch('app.get_db_connection')
+def test_update_rental_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Allotment_ID': 1,
+        'Resident_ID': 1,
+        'Date_Rented_From': '2022-01-01',
+        'Date_Rented_To': '2023-01-01'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/rentals/999', json=data)
+
+    assert response.status_code == 404
+    assert b'Rental not found' in response.data
+
+# Test for DELETE /rentals/<id> (Delete rental - success case)
+@patch('app.get_db_connection')
+def test_delete_rental(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+    mock_cursor.fetchone.return_value = {'Rental_ID': 1, 'Allotment_ID': 1, 'Resident_ID': 1, 'Date_Rented_From': '2022-01-01', 'Date_Rented_To': '2023-01-01'}
+
+    with app.test_client() as client:
+        response = client.delete('/rentals/1')
+
+    assert response.status_code == 200
+    assert b'Rental deleted successfully' in response.data
+
+
+# Test for DELETE /rentals/<id> (Rental not found)
+@patch('app.get_db_connection')
+def test_delete_rental_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.delete('/rentals/999')  
+
+    assert response.status_code == 404
+    assert b'Rental not found' in response.data
+
+
+# Test for DELETE /rentals/<id> (Database error)
+@patch('app.get_db_connection')
+def test_delete_rental_db_error(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_conn.cursor.side_effect = Exception("Database error")
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.delete('/rentals/1')
+
+    assert response.status_code == 500
+    assert b'Database error' in response.data
