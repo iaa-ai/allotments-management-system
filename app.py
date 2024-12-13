@@ -83,6 +83,13 @@ def home():
     </html>
     """
 
+# Custom error handler for 400 Bad Request
+@app.errorhandler(400)
+def bad_request(error):
+    # Return a JSON response with an error message and 400 status code
+    return jsonify({"error": "Invalid JSON"}), 400
+
+
 # ----------------------------------------------- Departments ------------------------------------------------
 # Route to fetch all Departments
 @app.route('/departments', methods=['GET'])  
