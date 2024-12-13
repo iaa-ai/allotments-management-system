@@ -118,3 +118,101 @@ def test_add_department_missing_fields(test_token):
 
     assert response.status_code == 400  
     assert b'Missing required fields' in response.data  
+
+# Test for POST /departments (failure case - db error)
+@patch('app.get_db_connection') 
+def test_add_department_db_error(mock_get_db_connection, test_token):
+    mock_conn = MagicMock()  
+    mock_conn.cursor.side_effect = Exception("Database error")  
+    mock_get_db_connection.return_value = mock_conn 
+
+    data = {
+        'Managers_Name': 'Jane Doe',
+        'Email_Address': 'jane@example.com',
+        'Mobile_Cell_Phone_Number': '9876543210'
+    }
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'}  
+        response = client.post('/departments', json=data, headers=headers)
+
+    assert response.status_code == 500 
+    assert b'Database error' in response.data  
+
+# Test for PUT /departments/<id> (success case)
+@patch('app.get_db_connection') 
+def test_update_department(mock_get_db_connection):
+    mock_conn = MagicMock() 
+    mock_cursor = MagicMock() 
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor  
+    mock_get_db_connection.return_value = mock_conn 
+
+    data = {
+        'Managers_Name': 'John Doe',
+        'Email_Address': 'john.doe@example.com',
+        'Mobile_Cell_Phone_Number': '1122334455'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/departments/1', json=data)  
+
+    assert response.status_code == 200  
+    assert b'Department updated successfully' in response.data  
+
+# Test for PUT /departments/<id> (not found)
+@patch('app.get_db_connection')  
+def test_update_department_not_found(mock_get_db_connection):
+    mock_conn = MagicMock() 
+    mock_cursor = MagicMock() 
+    mock_cursor.fetchone.return_value = None 
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn 
+ 
+    data = {
+        'Managers_Name': 'John Doe',
+        'Email_Address': 'john.doe@example.com',
+        'Mobile_Cell_Phone_Number': '1122334455'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/departments/999', json=data)
+
+    assert response.status_code == 404  
+    assert b'Department not found' in response.data  
+
+# Test for PUT /departments/<id> (database error)
+@patch('app.get_db_connection') 
+def test_update_department_db_error(mock_get_db_connection):
+    mock_conn = MagicMock() 
+    mock_conn.cursor.side_effect = Exception("Database error")  
+    mock_get_db_connection.return_value = mock_conn 
+
+    data = {
+        'Managers_Name': 'John Doe',
+        'Email_Address': 'john.doe@example.com',
+        'Mobile_Cell_Phone_Number': '1122334455'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/departments/1', json=data)  
+
+    assert response.status_code == 500 
+    assert b'Database error' in response.data  
+
+# Test for DELETE /departments/<id> (success case)
+@patch('app.get_db_connection')  
+def test_delete_department(mock_get_db_connection, test_token):
+    mock_conn = MagicMock() 
+    mock_cursor = MagicMock() 
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor 
+    mock_get_db_connection.return_value = mock_conn 
+
+    mock_cursor.fetchone.return_value = {'Department_ID': 1, 'Managers_Name': 'John',
+                                         'Email_Address': 'john@example.com', 'Mobile_Cell_Phone_Number': '1234567890'}
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'}  
+        response = client.delete('/departments/1', headers=headers)  
+
+    assert response.status_code == 200  
+    assert b'Department deleted successfully' in response.data  
