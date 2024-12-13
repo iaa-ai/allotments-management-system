@@ -36,6 +36,18 @@ def test_invalid_json(client, test_token):
     assert response.status_code == 400
     assert b'Invalid JSON' in response.data
 
+# Test for database connection error handling
+@patch('app.get_db_connection')
+def test_db_connection_error(mock_get_db_connection, test_token):
+    mock_get_db_connection.side_effect = Exception("Database connection error")
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'}  
+        response = client.get('/departments', headers=headers)  
+
+    assert response.status_code == 500
+    assert b'Database connection error' in response.data
+
 # Test for GET /departments endpoint
 @patch('app.get_db_connection')  # Mocking the get_db_connection
 def test_get_departments(mock_get_db_connection, test_token):
