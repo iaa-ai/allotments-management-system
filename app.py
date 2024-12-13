@@ -411,6 +411,97 @@ def delete_resident(id):
     finally:
         connection.close()
 
+# --------------------------------------------------- Rentals ----------------------------------------------------
+@app.route('/rentals', methods=['GET'])
+def get_rentals():
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Rentals")
+            rentals = cursor.fetchall()
+        return jsonify(rentals), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/rentals/<int:id>', methods=['GET'])
+def get_rental(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Rentals WHERE Rental_ID = %s", (id,))
+            rental = cursor.fetchone()
+        if rental:
+            return jsonify(rental), 200
+        else:
+            return jsonify({'error': 'Rental not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/rentals', methods=['POST'])
+def add_rental():
+    data = request.json
+    required_fields = ['Allotment_ID', 'Resident_ID', 'Date_Rented_From', 'Date_Rented_To']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO Rentals (Allotment_ID, Resident_ID, Date_Rented_From, Date_Rented_To) VALUES (%s, %s, %s, %s)",
+                (data['Allotment_ID'], data['Resident_ID'], data['Date_Rented_From'], data['Date_Rented_To'])
+            )
+            connection.commit()
+        return jsonify({'message': 'Rental added successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/rentals/<int:id>', methods=['PUT'])
+def update_rental(id):
+    data = request.json
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Rentals WHERE Rental_ID = %s", (id,))
+            rental = cursor.fetchone()
+            if not rental:
+                return jsonify({'error': 'Rental not found'}), 404
+            cursor.execute(
+                "UPDATE Rentals SET Allotment_ID=%s, Resident_ID=%s, Date_Rented_From=%s, Date_Rented_To=%s WHERE Rental_ID=%s",
+                (data['Allotment_ID'], data['Resident_ID'], data['Date_Rented_From'], data['Date_Rented_To'], id)
+            )
+            connection.commit()
+        return jsonify({'message': 'Rental updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/rentals/<int:id>', methods=['DELETE'])
+def delete_rental(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Rentals WHERE Rental_ID = %s", (id,))
+            rental = cursor.fetchone()
+            if not rental:
+                return jsonify({'error': 'Rental not found'}), 404
+            cursor.execute("DELETE FROM Rentals WHERE Rental_ID = %s", (id,))
+            connection.commit()
+        return jsonify({'message': 'Rental deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True)
