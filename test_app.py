@@ -248,4 +248,173 @@ def test_delete_department_db_error(mock_get_db_connection, test_token):
     assert response.status_code == 500
     assert b'Database error' in response.data
 
+# Test for GET /sites (Fetch all sites)
+@patch('app.get_db_connection')
+def test_get_sites(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+
+    mock_cursor.fetchall.return_value = [{'Site_ID': 1, 'Department_ID': 1, 'Managers_Name': 'Alice', 'Mobile_Cell_Phone_Number': '1234567890'}]
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/sites')
+
+    assert response.status_code == 200
+    assert b'Alice' in response.data
+    assert b'1234567890' in response.data
+
+
+# Test for GET /sites/<id> (Fetch a specific site by ID)
+@patch('app.get_db_connection')
+def test_get_site(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+
+    mock_cursor.fetchone.return_value = {'Site_ID': 1, 'Department_ID': 1, 'Managers_Name': 'Alice', 'Mobile_Cell_Phone_Number': '1234567890'}
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/sites/1')
+
+    assert response.status_code == 200
+    assert b'Alice' in response.data
+    assert b'1234567890' in response.data
+
+
+# Test for GET /sites/<id> (Site not found)
+@patch('app.get_db_connection')
+def test_get_site_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.get('/sites/999')  
+
+    assert response.status_code == 404
+    assert b'Site not found' in response.data
+
+
+# Test for POST /sites (Add a new site)
+@patch('app.get_db_connection')
+def test_add_site(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Department_ID': 1,
+        'Managers_Name': 'Bob',
+        'Mobile_Cell_Phone_Number': '9876543210'
+    }
+
+    with app.test_client() as client:
+        response = client.post('/sites', json=data)
+
+    assert response.status_code == 201
+    assert b'Site added successfully' in response.data
+
+# Test for POST /sites (Missing required fields)
+def test_add_site_missing_fields():
+    data = {'Department_ID': 1}
+
+    with app.test_client() as client:
+        response = client.post('/sites', json=data)
+
+    assert response.status_code == 400
+    assert b'Missing required fields' in response.data
+
+# Test for PUT /sites/<id> (Update site - success case)
+@patch('app.get_db_connection')
+def test_update_site(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Department_ID': 1,
+        'Managers_Name': 'Alice',
+        'Mobile_Cell_Phone_Number': '1234567890'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/sites/1', json=data)
+
+    assert response.status_code == 200
+    assert b'Site updated successfully' in response.data
+
+
+# Test for PUT /sites/<id> (Site not found)
+@patch('app.get_db_connection')
+def test_update_site_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Department_ID': 1,
+        'Managers_Name': 'Alice',
+        'Mobile_Cell_Phone_Number': '1234567890'
+    }
+
+    with app.test_client() as client:
+        response = client.put('/sites/999', json=data)
+
+    assert response.status_code == 404
+    assert b'Site not found' in response.data
+
+
+# Test for DELETE /sites/<id> (Delete site - success case)
+@patch('app.get_db_connection')
+def test_delete_site(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+    mock_cursor.fetchone.return_value = {'Site_ID': 1, 'Department_ID': 1, 'Managers_Name': 'Alice', 'Mobile_Cell_Phone_Number': '1234567890'}
+
+    with app.test_client() as client:
+        response = client.delete('/sites/1')
+
+    assert response.status_code == 200
+    assert b'Site deleted successfully' in response.data
+
+# Test for DELETE /sites/<id> (Site not found)
+@patch('app.get_db_connection')
+def test_delete_site_not_found(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.delete('/sites/999')  
+
+    assert response.status_code == 404
+    assert b'Site not found' in response.data
+
+# Test for DELETE /sites/<id> (Database error)
+@patch('app.get_db_connection')
+def test_delete_site_db_error(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_conn.cursor.side_effect = Exception("Database error")
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        response = client.delete('/sites/1')
+
+    assert response.status_code == 500
+    assert b'Database error' in response.data
 
