@@ -28,6 +28,14 @@ def test_get_departments_invalid_token(client):
     assert response.status_code == 401  
     assert b'Invalid token' in response.data 
 
+# Test for invalid JSON input (non-JSON)
+def test_invalid_json(client, test_token):
+    headers = {'Authorization': f'Bearer {test_token}'}  
+    response = client.post('/departments', data="Invalid JSON", content_type='application/json', headers=headers)
+
+    assert response.status_code == 400
+    assert b'Invalid JSON' in response.data
+
 # Test for GET /departments endpoint
 @patch('app.get_db_connection')  # Mocking the get_db_connection
 def test_get_departments(mock_get_db_connection, test_token):
