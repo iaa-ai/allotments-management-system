@@ -1,5 +1,31 @@
 from flask import Flask, jsonify, request
-import pymysql 
+import pymysql
+import jwt
+import datetime 
+
+# Secret key used to sign and verify JWT tokens
+SECRET_KEY = 'bakanese'  # Replace with a strong, unique secret key in production
+
+# Function to create a JWT token
+def create_jwt(user_id, role):
+    payload = {
+        'user_id': user_id,  # User's unique ID
+        'role': role,  # User's role
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)  # Token expires in 1 hour
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm='HS256')  # Encode the payload using HS256 algorithm
+
+# Function to decode and verify a JWT token
+def decode_jwt(token):
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+    
+    except jwt.ExpiredSignatureError:
+        return {'error': 'Token expired'}
+    
+    except jwt.InvalidTokenError:
+        return {'error': 'Invalid token'}
+
 
 app = Flask(__name__)
 
@@ -12,6 +38,27 @@ def get_db_connection():
         database='allotments',  # Database name
         cursorclass=pymysql.cursors.DictCursor  # Ensures that results are returned as dictionaries
     )
+
+# Login
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    # Dummy user database (replace with real DB query)
+    users = {
+        'admin': {'password': 'admin123', 'role': 'admin'},
+        'user': {'password': 'user123', 'role': 'user'}
+    }
+
+    # Validate user credentials
+    user = users.get(username)
+    if not user or user['password'] != password:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
+    token = create_jwt(user_id=username, role=user['role'])
+    return jsonify({'token': token}), 200
 
 # Define a route for the home page
 @app.route('/')
