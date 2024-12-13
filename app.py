@@ -320,6 +320,96 @@ def delete_site(id):
     finally:
         connection.close()
 
+# -------------------------------------------------- Residents ------------------------------------------------
+@app.route('/residents', methods=['GET'])
+def get_residents():
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Residents")
+            residents = cursor.fetchall()
+        return jsonify(residents), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/residents/<int:id>', methods=['GET'])
+def get_resident(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Residents WHERE Resident_ID = %s", (id,))
+            resident = cursor.fetchone()
+        if resident:
+            return jsonify(resident), 200
+        else:
+            return jsonify({'error': 'Resident not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/residents', methods=['POST'])
+def add_resident():
+    data = request.json
+    required_fields = ['Resident_Details', 'Date_First_Registered', 'Date_Of_Birth']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO Residents (Resident_Details, Date_First_Registered, Date_Of_Birth) VALUES (%s, %s, %s)",
+                (data['Resident_Details'], data['Date_First_Registered'], data['Date_Of_Birth'])
+            )
+            connection.commit()
+        return jsonify({'message': 'Resident added successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/residents/<int:id>', methods=['PUT'])
+def update_resident(id):
+    data = request.json
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Residents WHERE Resident_ID = %s", (id,))
+            resident = cursor.fetchone()
+            if not resident:
+                return jsonify({'error': 'Resident not found'}), 404
+            cursor.execute(
+                "UPDATE Residents SET Resident_Details=%s, Date_First_Registered=%s, Date_Of_Birth=%s WHERE Resident_ID=%s",
+                (data['Resident_Details'], data['Date_First_Registered'], data['Date_Of_Birth'], id)
+            )
+            connection.commit()
+        return jsonify({'message': 'Resident updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
+
+@app.route('/residents/<int:id>', methods=['DELETE'])
+def delete_resident(id):
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Residents WHERE Resident_ID = %s", (id,))
+            resident = cursor.fetchone()
+            if not resident:
+                return jsonify({'error': 'Resident not found'}), 404
+            cursor.execute("DELETE FROM Residents WHERE Resident_ID = %s", (id,))
+            connection.commit()
+        return jsonify({'message': 'Resident deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        connection.close()
 
 
 if __name__ == '__main__':
