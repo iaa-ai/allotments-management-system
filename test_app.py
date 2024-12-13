@@ -48,6 +48,22 @@ def test_db_connection_error(mock_get_db_connection, test_token):
     assert response.status_code == 500
     assert b'Database connection error' in response.data
 
+# Test for GET /departments when there are no departments
+@patch('app.get_db_connection')
+def test_get_departments_empty(mock_get_db_connection, test_token):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchall.return_value = []
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'} 
+        response = client.get('/departments', headers=headers)
+
+    assert response.status_code == 200
+    assert b'[]' in response.data 
+
 # Test for GET /departments endpoint
 @patch('app.get_db_connection')  # Mocking the get_db_connection
 def test_get_departments(mock_get_db_connection, test_token):
