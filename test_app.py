@@ -64,6 +64,40 @@ def test_get_departments_empty(mock_get_db_connection, test_token):
     assert response.status_code == 200
     assert b'[]' in response.data 
 
+# Test for PUT /departments/<id> with missing fields
+@patch('app.get_db_connection')
+def test_update_department_partial_fields(mock_get_db_connection):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    data = {
+        'Managers_Name': 'John Doe',  
+    }
+
+    with app.test_client() as client:
+        response = client.put('/departments/1', json=data)
+
+    assert response.status_code == 400  
+    assert b'Missing required fields' in response.data
+
+# Test for DELETE /departments/<id> when department is not found
+@patch('app.get_db_connection')
+def test_delete_department_edge_case(mock_get_db_connection, test_token):
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_cursor.fetchone.return_value = None
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'}  
+        response = client.delete('/departments/999', headers=headers)  
+
+    assert response.status_code == 404
+    assert b'Department not found' in response.data
+
 # Test for GET /departments endpoint
 @patch('app.get_db_connection')  # Mocking the get_db_connection
 def test_get_departments(mock_get_db_connection, test_token):
