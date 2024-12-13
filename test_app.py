@@ -86,3 +86,24 @@ def test_get_department_not_found(mock_get_db_connection):
 
     assert response.status_code == 404 
     assert b'Department not found' in response.data 
+
+# Test for POST /departments (success case)
+@patch('app.get_db_connection')  
+def test_add_department(mock_get_db_connection, test_token):
+    mock_conn = MagicMock()  
+    mock_cursor = MagicMock() 
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+    mock_get_db_connection.return_value = mock_conn 
+
+    data = {
+        'Managers_Name': 'Jane Doe',
+        'Email_Address': 'jane@example.com',
+        'Mobile_Cell_Phone_Number': '9876543210'
+    }
+
+    with app.test_client() as client:
+        headers = {'Authorization': f'Bearer {test_token}'}  
+        response = client.post('/departments', json=data, headers=headers)  
+
+    assert response.status_code == 201  
+    assert b'Department added successfully' in response.data 
