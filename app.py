@@ -228,13 +228,15 @@ def add_department():
     # Check if all required fields are provided in the request data
     if not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
+    
+    other_details = data.get('Other_Details', None)  # Optional field
 
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO Departments (Managers_Name, Email_Address, Mobile_Cell_Phone_Number) VALUES (%s, %s, %s)",
-                (data['Managers_Name'], data['Email_Address'], data['Mobile_Cell_Phone_Number'])
+                "INSERT INTO Departments (Managers_Name, Email_Address, Mobile_Cell_Phone_Number, Other_Details) VALUES (%s, %s, %s, %s)",
+                (data['Managers_Name'], data['Email_Address'], data['Mobile_Cell_Phone_Number'], other_details)
             )
             connection.commit()  
         return jsonify({'message': 'Department added successfully'}), 201
