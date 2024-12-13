@@ -2,7 +2,9 @@ from flask import Flask, jsonify, request
 import pymysql
 import jwt
 import datetime 
+from functools import wraps
 
+# ------------------------------------- Security ----------------------------------
 # Secret key used to sign and verify JWT tokens
 SECRET_KEY = 'bakanese'  # Replace with a strong, unique secret key in production
 
@@ -25,6 +27,44 @@ def decode_jwt(token):
     
     except jwt.InvalidTokenError:
         return {'error': 'Invalid token'}
+
+# Decorator to protect routes with optional role-based access control
+def jwt_required(role=None):
+    def decorator(func):
+        @wraps(func)  # Preserve metadata of the original function
+        def wrapper(*args, **kwargs):
+            # Get the Authorization token from request headers
+            token = request.headers.get('Authorization')
+            
+            if not token:
+                return jsonify({'error': 'Authorization token is missing'}), 401
+
+            try:
+                # Extract the token part from the "Bearer <token>" format
+                token = token.split(" ")[1]
+
+                # Decode and verify the JWT token
+                decoded_token = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+
+                # Check for role-based access control (if a role is provided)
+                if role and decoded_token['role'] != role:
+                    return jsonify({'error': 'Access denied for this role'}), 403
+
+                # Attach the decoded token data to the request object for further use
+                request.user = decoded_token
+                # Call the original function if the token is valid
+                return func(*args, **kwargs)
+            
+            except jwt.ExpiredSignatureError:
+                # Handle the case where the token has expired
+                return jsonify({'error': 'Token expired'}), 401
+            
+            except jwt.InvalidTokenError:
+
+                # Handle the case where the token is invalid
+                return jsonify({'error': 'Invalid token'}), 401
+        return wrapper
+    return decorator
 
 
 app = Flask(__name__)
@@ -140,6 +180,7 @@ def bad_request(error):
 # ----------------------------------------------- Departments ------------------------------------------------
 # Route to fetch all Departments
 @app.route('/departments', methods=['GET'])  
+@jwt_required()  # Any authenticated user can view
 def get_departments():
     connection = None  
 
@@ -179,6 +220,7 @@ def get_department(id):
 
 # Route to add a new department
 @app.route('/departments', methods=['POST'])
+@jwt_required(role='admin') # Restrict access to admin role
 def add_department():
     data = request.json  # Get the data sent in the request
     required_fields = ['Managers_Name', 'Email_Address', 'Mobile_Cell_Phone_Number']
@@ -238,6 +280,7 @@ def update_department(id):
 
 # Route to delete a department by its ID
 @app.route('/departments/<int:id>', methods=['DELETE'])
+@jwt_required(role='admin')  # Only admins can delete
 def delete_department(id):
     try:
         connection = get_db_connection()
