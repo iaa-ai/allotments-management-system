@@ -102,6 +102,109 @@ def get_departments():
         if connection:
             connection.close()
 
+# Route to fetch a specific department by its ID
+@app.route('/departments/<int:id>', methods=['GET'])
+def get_department(id):
+    try:
+        connection = get_db_connection()
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Departments WHERE Department_ID = %s", (id,))
+            department = cursor.fetchone()
+        if department:
+            return jsonify(department), 200
+        else:
+            return jsonify({'error': 'Department not found'}), 404
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to add a new department
+@app.route('/departments', methods=['POST'])
+def add_department():
+    data = request.json  # Get the data sent in the request
+    required_fields = ['Managers_Name', 'Email_Address', 'Mobile_Cell_Phone_Number']
+
+    # Check if all required fields are provided in the request data
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO Departments (Managers_Name, Email_Address, Mobile_Cell_Phone_Number) VALUES (%s, %s, %s)",
+                (data['Managers_Name'], data['Email_Address'], data['Mobile_Cell_Phone_Number'])
+            )
+            connection.commit()  
+        return jsonify({'message': 'Department added successfully'}), 201
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to update an existing department by its ID
+@app.route('/departments/<int:id>', methods=['PUT'])
+def update_department(id):
+    data = request.json  
+    required_fields = ['Managers_Name', 'Email_Address', 'Mobile_Cell_Phone_Number']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    try:
+        connection = get_db_connection()
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Departments WHERE Department_ID = %s", (id,))
+            department = cursor.fetchone()
+            
+            if not department:
+                return jsonify({'error': 'Department not found'}), 404
+            
+            cursor.execute(
+                "UPDATE Departments SET Managers_Name=%s, Email_Address=%s, Mobile_Cell_Phone_Number=%s WHERE Department_ID=%s",
+                (data['Managers_Name'], data['Email_Address'], data['Mobile_Cell_Phone_Number'], id)
+            )
+            connection.commit()  
+        
+        return jsonify({'message': 'Department updated successfully'}), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+# Route to delete a department by its ID
+@app.route('/departments/<int:id>', methods=['DELETE'])
+def delete_department(id):
+    try:
+        connection = get_db_connection()
+        
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Departments WHERE Department_ID = %s", (id,))
+            department = cursor.fetchone()
+            
+            if not department:
+                return jsonify({'error': 'Department not found'}), 404
+            
+            cursor.execute("DELETE FROM Departments WHERE Department_ID = %s", (id,))
+            connection.commit()  
+        
+        return jsonify({'message': 'Department deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    finally:
+        connection.close()
+
+
 
 
 if __name__ == '__main__':
