@@ -393,7 +393,7 @@ def test_add_site(mock_get_db_connection):
 
 # Test for POST /sites (Missing required fields)
 def test_add_site_missing_fields():
-    data = {'Department_ID': 1}
+    data = {'Other_Details': "Test it."}
 
     with app.test_client() as client:
         response = client.post('/sites', json=data)

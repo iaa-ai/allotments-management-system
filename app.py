@@ -311,7 +311,19 @@ def get_sites():
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM Sites")
+            cursor.execute("""
+                SELECT 
+                    s.Site_ID,
+                    s.Other_Details,
+                    d.Managers_Name,
+                    d.Mobile_Cell_Phone_Number
+                FROM 
+                    Sites s
+                JOIN 
+                    Departments d 
+                ON 
+                    s.Department_ID = d.Department_ID
+                """)
             sites = cursor.fetchall() 
         return jsonify(sites), 200
     
@@ -346,7 +358,7 @@ def get_site(id):
 @app.route('/sites', methods=['POST'])
 def add_site():
     data = request.json  
-    required_fields = ['Department_ID', 'Managers_Name', 'Mobile_Cell_Phone_Number']
+    required_fields = ['Department_ID']
 
     if not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
@@ -356,8 +368,11 @@ def add_site():
         
         with connection.cursor() as cursor:
             cursor.execute(
-                "INSERT INTO Sites (Department_ID, Managers_Name, Mobile_Cell_Phone_Number) VALUES (%s, %s, %s)",
-                (data['Department_ID'], data['Managers_Name'], data['Mobile_Cell_Phone_Number'])
+                 """
+                INSERT INTO Sites (Department_ID, Other_Details) 
+                VALUES (%s, %s)
+                """,
+                (data['Department_ID'], data.get('Other_Details', None))
             )
             connection.commit()  
         
@@ -384,8 +399,12 @@ def update_site(id):
                 return jsonify({'error': 'Site not found'}), 404
             
             cursor.execute(
-                "UPDATE Sites SET Department_ID=%s, Managers_Name=%s, Mobile_Cell_Phone_Number=%s WHERE Site_ID=%s",
-                (data['Department_ID'], data['Managers_Name'], data['Mobile_Cell_Phone_Number'], id)
+                """
+                UPDATE Sites 
+                SET Department_ID = %s, Other_Details = %s
+                WHERE Site_ID = %s
+                """,
+                (data.get('Department_ID'), data.get('Other_Details', None), id)
             )
             connection.commit()  
         return jsonify({'message': 'Site updated successfully'}), 200
