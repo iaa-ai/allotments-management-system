@@ -13,14 +13,17 @@ pip install -r requirements.txt
 ```
 
 ## Configuration
-This project requires a few environment variables for proper configuration:
+To configure the database:
+
+1. Create the `allotments` MySQL database to your server or import the `allotments.sql` in the dbSetup folder.
+2. Update the database configuration in the Flask app with your database connection details.
 
 ### Environment variables needed:
-- `DATABASE_URL`: The URL to your database, including credentials and host.
-- `SECRET_KEY`: A strong secret key used for JWT token signing and verification.
-
-You can set these environment variables in your `.env` file or directly in your environment.
-
+- `MYSQL_HOST`: The hostname for the MySQL database
+- `MYSQL_USER`: MySQL username 
+- `MYSQL_PASSWORD`: MySQL password
+- `MYSQL_DB`: Name of the database
+- `SECRET_KEY`: bakanese
 ---
 
 ## API Endpoints
