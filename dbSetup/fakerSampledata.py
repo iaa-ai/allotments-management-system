@@ -38,14 +38,12 @@ def insert_data():
     # Insert data into Sites table
     for _ in range(25):
         department_id = department_ids[randint(0, len(department_ids) - 1)]  # Randomly choose a Department_ID
-        manager_name = fake.name()
-        phone = "+63" + ''.join([str(fake.random_int(min=0, max=9)) for _ in range(9)])
         other_details = fake.sentence()
         try:
             cursor.execute("""
-                   INSERT INTO Sites (Department_ID, Managers_Name, Mobile_Cell_Phone_Number, Other_Details)
-                   VALUES (%s, %s, %s, %s)
-               """, (department_id, manager_name, phone, other_details))
+                   INSERT INTO Sites (Department_ID, Other_Details)
+                   VALUES (%s, %s)
+               """, (department_id, other_details))
             site_ids.append(cursor.lastrowid)  
         except mysql.connector.Error as err:
             print(f"Error inserting into Sites table: {err}")
